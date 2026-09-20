@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glitchs - Penetration Testing Portfolio</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap');
+        
+        :root {
+            --bg-main: #050505;
+            --bg-card: #0d0d0d;
+            --neon-red: #ff1a1a;
+            --dark-red: #4d0000;
+            --text-main: #d4d4d4;
+            --text-muted: #888;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans KR', 'Courier New', monospace;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            padding: 40px 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* 터미널 헤더 스타일 */
+        .terminal-header {
+            background-color: #000;
+            border: 1px solid var(--dark-red);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 40px;
+            box-shadow: 0 0 15px rgba(255, 26, 26, 0.1);
+        }
+
+        .term-prompt { color: var(--neon-red); font-weight: bold; }
+        .term-cmd { color: #fff; }
+        .term-output { color: #00ff00; margin-top: 10px; font-size: 0.9rem; }
+        .term-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 15px;
+            background-color: var(--neon-red);
+            animation: blink 1s step-end infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes blink { 50% { opacity: 0; } }
+
+        .section-title {
+            color: #fff;
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--dark-red);
+            padding-bottom: 10px;
+            display: inline-block;
+        }
+
+        /* 카드 그리드 레이아웃 */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: linear-gradient(145deg, #0a0a0a 0%, #050505 100%);
+            border: 1px solid #222;
+            border-left: 3px solid var(--dark-red);
+            border-radius: 6px;
+            padding: 25px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .card:hover {
+            border-left: 3px solid var(--neon-red);
+            border-color: var(--dark-red);
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(255, 26, 26, 0.15);
+        }
+
+        .date {
+            font-family: 'Courier New', Courier, monospace;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .project-name {
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .tag.role {
+            background-color: rgba(255, 26, 26, 0.1);
+            color: var(--neon-red);
+            border: 1px solid rgba(255, 26, 26, 0.3);
+        }
+
+        .tag.client {
+            background-color: #1a1a1a;
+            color: #aaa;
+            border: 1px solid #333;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 터미널 헤더 -->
+    <div class="terminal-header">
+        <div><span class="term-prompt">root@glitchs:~/portfolio$</span> <span class="term-cmd">cat experience_log.txt</span></div>
+        <div class="term-output">
+            [+] Loading Security Assessment & Penetration Testing Records...<br>
+            [+] Total 12 Missions Accomplished.<br>
+            [+] Target: Web, Mobile App, Infrastructure.<br>
+            [+] Status: READY <span class="term-cursor"></span>
+        </div>
+    </div>
+
+    <div class="section-title">PROJECT & EXPERIENCE</div>
+
+    <!-- 프로젝트 카드 그리드 -->
+    <div class="grid">
+        <!-- 데상트 -->
+        <div class="card">
+            <div class="date">2025. 03. 04 - 2025. 04. 28</div>
+            <div class="project-name">데상트 웹 취약점 진단</div>
+            <div class="tags">
+                <span class="tag role">웹 모의해킹</span>
+                <span class="tag client">데상트 코리아</span>
+            </div>
+        </div>
+
+        <!-- 단국대학교 -->
+        <div class="card">
+            <div class="date">2025. 05. 07 - 2025. 07. 25</div>
+            <div class="project-name">단국대학교 ISMS 인증컨설팅</div>
+            <div class="tags">
+                <span class="tag role">웹&앱 모의해킹 / 인프라 진단</span>
+                <span class="tag client">단국대학교 병원</span>
+            </div>
+        </div>
+
+        <!-- BNP파리바 -->
+        <div class="card">
+            <div class="date">2025. 08. 04 - 2025. 10. 31</div>
+            <div class="project-name">BNP파리바 카디프생명 ISMS 인증컨설팅</div>
+            <div class="tags">
+                <span class="tag role">웹 모의해킹 / 인프라 진단</span>
+                <span class="tag client">BNP파리바 카디프생명</span>
+            </div>
+        </div>
+
+        <!-- 하고 하우스 -->
+        <div class="card">
+            <div class="date">2025. 11. 03 - 2025. 12. 29</div>
+            <div class="project-name">하고 하우스 웹 취약점 진단</div>
+            <div class="tags">
+                <span class="tag role">웹 모의해킹</span>
+                <span class="tag client">하고하우스</span>
+            </div>
+        </div>
+
+        <!-- 패션 플러스 -->
+        <div class="card">
+            <div class="date">2025. 11. 03 - 2025. 12. 29</div>
+            <div class="project-name">패션 플러스 웹 취약점 진단</div>
+            <div class="tags">
+                <span class="tag role">웹 모의해킹</span>
+                <span class="tag client">패션플러스</span>
+            </div>
+        </div>
+
+        <!-- 한국보훈복지의료공단 -->
+        <div class="card">
+            <div class="date">2026. 01. 26 - 2026. 02. 13</div>
+            <div class="project-name">한국보훈복지의료공단 인프라 진단</div>
+            <div class="tags">
+                <span class="tag role">인프라 진단</span>
+                <span class="tag client">케이엘정보통신</span>
+            </div>
+        </div>
+
+        <!-- 롯데렌탈 -->
+        <div class="card">
+            <div class="date">2026. 03. 03 - 2026. 06. 01</div>
+            <div class="project-name">롯데렌탈 웹&앱 취약점 진단</div>
+            <div class="tags">
+                <span class="tag role">웹 모의해킹</span>
+                <span class="tag client">롯데렌탈 본사</span>
+            </div>
+        </div>
+
+        <!-- 씨앤비솔루션 -->
+        <div class="card">
+            <div class="date">2026. 06. 11 - 2026. 06. 18</div>
+            <div class="project-name">씨앤비솔루션</div>
+            <div class="tags">
+                <span class="tag role">인프라 진단</span>
+            </div>
+        </div>
+
+        <!-- 하고하우스(PB) -->
+        <div class="card">
+            <div class="date">2026. 06. 29 - 2026. 07. 03</div>
+            <div class="project-name">하고하우스(PB브랜드-CAFE24)</div>
+            <div class="tags">
+                <span class="tag role">웹 모의해킹</span>
+            </div>
+        </div>
+
+        <!-- DNInc -->
+        <div class="card">
+            <div class="date">2026. 07. 06 - 2026. 07. 31</div>
+            <div class="project-name">DNInc</div>
+            <div class="tags">
+                <span class="tag role">웹 모의해킹</span>
+            </div>
+        </div>
+
+        <!-- 리워드허브 -->
+        <div class="card">
+            <div class="date">2026. 08. 03 - 2026. 08. 14</div>
+            <div class="project-name">리워드허브</div>
+            <div class="tags">
+                <span class="tag role">웹 모의해킹</span>
+            </div>
+        </div>
+
+        <!-- 문화재단 -->
+        <div class="card">
+            <div class="date">2026. 08. 17 - 2026. 08. 28</div>
+            <div class="project-name">문화재단</div>
+            <div class="tags">
+                <span class="tag role">웹 모의해킹</span>
+            </div>
+        </div>
+
+        <!-- BNP파리바 카디프생명 (BNP) -->
+        <div class="card">
+            <div class="date">2026. 09. 07 - 2026. 00. 00 -{진행중(수정 예정)}</div>
+            <div class="project-name">BNP파리바 카디프생명</div>
+            <div class="tags">
+                <span class="tag role">웹 모의해킹</span>
+            </div>
+        </div>
+
+        <!-- 쿠팡로지틱스 (Coupang) -->
+        <div class="card">
+            <div class="date">2026. 09. 10 - 2026. 09. 23 </div>
+            <div class="project-name">쿠팡로지틱스</div>
+            <div class="tags">
+                <span class="tag role">웹 모의해킹</span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>
