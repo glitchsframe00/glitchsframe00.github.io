@@ -116,7 +116,7 @@ analytics:
 author:
   name             : "폴트라인"
   avatar           : "/assets/images/Android.png" # path of avatar image, e.g. "/assets/images/bio-photo.jpg"
-  bio              : "폴트라인은 대한민국 20대의 흔한 사이버 보안 블로그로 여러가지 사이버 보안 해킹 기술 강의 뿐만 아니라 재밌는 사이버 보안 주제/팁/노하우 등을 기록하고, 더 나아가 자기개발을 통해 깊이 있는 취약점 연구원이 되기 위함을 최종 목표로 합니다."
+  bio              : "폴트라인은 대한민국 20대의 흔한 사이버 보안 블로그로 여러가지 사이버 보안 해킹 기술 뿐만 아니라 재밌는 사이버 보안 주제/팁/노하우 등을 기록하고, 더 나아가 자기개발을 통해 깊이 있는 취약점 연구원이 되기 위함을 최종 목표로 합니다."
   location         : "대한민국"
   email            :  "glitchsframe00@gmail.com"
   links:
