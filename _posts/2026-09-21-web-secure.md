@@ -152,3 +152,34 @@ public void uploadPdfFile(MultipartFile file) throws Exception {
     브라우저가 파일 형식을 임의로 해석하여 실행하는 것을 차단하기 위해 응답 헤더에 "X-Content-Type-Options: nosniff" 설정 필수 적용
   - 서빙 도메인(스토리지) 격리:
     업로드된 파일은 메인 서비스 도메인과 분리된 별도의 정적 전용 도메인(별도 CDN 또는 스토리지 도메인)을 통해 제공하여 악성 스크립트가 실행되더라도 메인 애플리케이션의 인증 쿠키/세션 탈취 위험을 원천 격리
+
+
+
+
+
+현재 작성하신 "실행 권한 제거(Apache HTTP Server, Nginx 예시)" 설정만으로는 이번 취약점(PDF XSS)이 전혀 조치되지 않습니다.
+그 이유와 추가해야 할 부분을 단계별로 짚어드리겠습니다.
+1. 왜 조치가 불충분할까?
+ * 서버사이드 vs 클라이언트사이드 스크립트 차이:
+   * 작성하신 설정은 jsp, php, pl, cgi, asp, js, sh 같은 웹 서버가 해석하여 실행하는 서버사이드 스크립트(웹셸)의 실행을 막는 룰입니다.
+   * 하지만 이번 공격 파일은 확장자가 .pdf이고, 스크립트가 실행되는 위치는 서버가 아니라 문서를 열람하는 피해자의 웹 브라우저(클라이언트)입니다.
+ * 허용 확장자 매칭:
+   * 설정 내 <FilesMatch "\.(png|jpg|jpeg|gif|txt)$"> 또는 PDF 허용 규칙을 두더라도, 정상 확장자 파일로 인정되어 파일 다운로드/접근 경로가 그대로 열립니다.
+   * 사용자가 해당 PDF 링크를 브라우저로 클릭하면 웹 서버는 파일을 그대로 전송하고, 브라우저 내장 뷰어에서 /OpenAction과 자바스크립트가 문제없이 실행됩니다.
+2. 웹 서버 설정 칸에 진짜로 들어가야 하는 내용
+해당 "Apache HTTP Server 예시 / Nginx 예시" 칸에는 실행 권한 차단 문법 대신, 브라우저 인라인 실행을 차단하는 응답 헤더 설정이 들어가야 취약점이 완벽히 방어됩니다.
+Apache HTTP Server 예시 대체안
+# PDF 파일 다운로드 시 브라우저 내 직접 실행 방지 (강제 다운로드)
+<FilesMatch "\.(pdf|PDF)$">
+    Header set Content-Disposition "attachment"
+    Header set X-Content-Type-Options "nosniff"
+</FilesMatch>
+
+Nginx 예시 대체안
+# PDF 파일 다운로드 시 브라우저 내 직접 실행 방지 (강제 다운로드)
+location ~* \.pdf$ {
+    add_header Content-Disposition "attachment";
+    add_header X-Content-Type-Options "nosniff";
+}
+
+기존에 적어두신 '실행 권한 제거'는 일반 웹셸 공격을 방어하는 보조 대책으로는 맞지만, 이번 보고서의 본질인 PDF 스크립트 실행(XSS) 취약점을 직접 조치하는 방안은 위와 같은 "Content-Disposition 헤더 설정"과 "애플리케이션(Java/PDFBox) 내부 객체 검증"입니다.
