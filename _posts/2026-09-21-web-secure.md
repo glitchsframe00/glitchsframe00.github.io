@@ -136,3 +136,19 @@ public void uploadPdfFile(MultipartFile file) throws Exception {
 ​검토 과정에 자동화를 추가하는 것도 도움이 될 수 있습니다(VirusTotal API를 통한 악성 해시 검사, ASP.NET Drawing Library 등 프레임워크를 통한 원시 콘텐츠 유형 검증 등). 단, 공개 서비스를 이용할 경우 데이터 유출 위협 및 정보 수집 가능성에 주의해야 합니다.
 
 
+
+※ 참고 규정
+- OWASP (Cheat Sheet Series: File Upload Cheat Sheet - File Content Validation & Serving Files Securely)
+- 행정안전부·한국인터넷진흥원 (소프트웨어 개발보안 가이드 - 크로스사이트 스크립트, 위험한 형식 파일 업로드)
+
+* 파일 내용 검증 (File Content Validation)
+  - PDF 문서 내부 파싱 및 악성 스크립트 검증:
+    문서 파일(PDF) 업로드 시 파일 헤더(Magic Bytes)뿐만 아니라 내부 구조를 검증하여, 문서 열람 시 자동 실행되는 트리거(/OpenAction, /AA) 및 악성 자바스크립트(/JavaScript, /JS) 객체 포함 여부를 서버 측에서 확인하고 차단하거나 해당 요소를 제거(Sanitize) 후 저장
+
+* 안전한 파일 서빙 (Serving Files Securely)
+  - 브라우저 인라인 렌더링 방지 (강제 다운로드 처리):
+    사용자가 파일을 열람하거나 다운로드할 때 웹 브라우저 내장 뷰어에서 자바스크립트가 직접 실행(XSS)되지 않도록, HTTP 응답 헤더에 "Content-Disposition: attachment; filename=파일명" 설정을 적용하여 강제 다운로드 유도
+  - 콘텐츠 타입 스니핑 방지:
+    브라우저가 파일 형식을 임의로 해석하여 실행하는 것을 차단하기 위해 응답 헤더에 "X-Content-Type-Options: nosniff" 설정 필수 적용
+  - 서빙 도메인(스토리지) 격리:
+    업로드된 파일은 메인 서비스 도메인과 분리된 별도의 정적 전용 도메인(별도 CDN 또는 스토리지 도메인)을 통해 제공하여 악성 스크립트가 실행되더라도 메인 애플리케이션의 인증 쿠키/세션 탈취 위험을 원천 격리
