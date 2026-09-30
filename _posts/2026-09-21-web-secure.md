@@ -183,3 +183,45 @@ location ~* \.pdf$ {
 }
 
 기존에 적어두신 '실행 권한 제거'는 일반 웹셸 공격을 방어하는 보조 대책으로는 맞지만, 이번 보고서의 본질인 PDF 스크립트 실행(XSS) 취약점을 직접 조치하는 방안은 위와 같은 "Content-Disposition 헤더 설정"과 "애플리케이션(Java/PDFBox) 내부 객체 검증"입니다.
+
+
+
+
+
+
+
+
+
+
+
+| 구분 | 내용 |
+| :--- | :--- |
+| **PDF 파일 검증 및 파싱 구현 예시<br>(Java / Spring 기준)** | <pre><code>1. PDF 파일 검증 및 파싱 로직 (FileValidationUtils.java)
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import org.apache.pdfbox.pdmodel.PDDocument;
+
+public class FileValidationUtils {
+    public void validatePdfFile(MultipartFile multipartFile) throws Exception {
+        // 1. 2차 관문: 파일 시그니처(매직 넘버) 검증
+        byte[] headerBytes = new byte[4];
+        try (InputStream is = multipartFile.getInputStream()) {
+            is.read(headerBytes);
+            String header = new String(headerBytes, StandardCharsets.US_ASCII);
+            if (!"%PDF".equals(header)) {
+                throw new IllegalArgumentException("허용되지 않는 파일 형식입니다.");
+            }
+        }
+
+        // 2. 3차 관문: 전용 파싱 라이브러리를 통한 구조 검증 (Apache PDFBox)
+        try (PDDocument document = PDDocument.load(multipartFile.getInputStream())) {
+            int numberOfPages = document.getNumberOfPages();
+            if (numberOfPages <= 0) {
+                throw new SecurityException("비정상적인 PDF 구조입니다.");
+            }
+        } catch (Exception e) {
+            throw new SecurityException("변조된 파일 구조로 인해 업로드가 거부되었습니다.");
+        }
+    }
+}</code></pre> |
+
