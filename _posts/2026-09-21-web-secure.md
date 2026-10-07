@@ -1,3 +1,4 @@
+```python
 import asyncio
 import re
 import pandas as pd
@@ -202,3 +203,4 @@ async def run_compliance_audit():
 
 if __name__ == "__main__":
     asyncio.run(run_compliance_audit())
+```
