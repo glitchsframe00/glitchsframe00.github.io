@@ -28,241 +28,161 @@
 
 ## 💻 스크립트 코드
 ```javascript
-(async function runHumanLikeAudit() {
-  const MASK_CHARS = "[*#●○Xx_]";
-  const maskRegex = new RegExp(MASK_CHARS);
+(function runDynamicFieldAudit() {
+  // 1. 마스킹 기호 식별 패턴 (*, #, ●, ○ 등)
+  const MASK_PATTERN = /[*#●○]/;
 
-  // 1. 포맷 기반 정규식 (주민번호, 전화번호, 카드, 계좌)
-  const REGEX_TARGETS = {
-    "주민등록번호(포맷)": {
-      unmasked: /\b\d{6}\s*[-]?\s*[1-4]\d{6}\b/,
-      masked: new RegExp(`\\b(?:\\d{6}\\s*[-]?\\s*${MASK_CHARS}{6,7}|${MASK_CHARS}{6}\\s*[-]?\\s*[1-4\\d]${MASK_CHARS}{5,6}|\\d{6}\\s*[-]?\\s*[1-4]${MASK_CHARS}{6})\\b`)
-    },
-    "전화번호(포맷)": {
-      unmasked: /\b01[016789]\s*[-.]?\s*\d{3,4}\s*[-.]?\s*\d{4}\b/,
-      masked: new RegExp(`\\b01[016789]\\s*[-.]?\\s*(?:${MASK_CHARS}{3,4}\\s*[-.]?\\s*\\d{4}|\\d{3,4}\\s*[-.]?\\s*${MASK_CHARS}{4}|${MASK_CHARS}{3,4}\\s*[-.]?\\s*${MASK_CHARS}{4})\\b`)
-    },
-    "신용카드번호(포맷)": {
-      unmasked: /\b(?:\d{4}[-\s]?){3}\d{4}\b/,
-      masked: new RegExp(`\\b(?:\\d{4}[-\\s]?${MASK_CHARS}{4}[-\\s]?${MASK_CHARS}{4}[-\\s]?\\d{4}|\\d{4}[-\\s]?\\d{4}[-\\s]?${MASK_CHARS}{4}[-\\s]?${MASK_CHARS}{4})\\b`)
-    },
-    "계좌번호(포맷)": {
-      unmasked: /\b\d{3,6}[-\s]?\d{2,6}[-\s]?\d{3,6}\b/,
-      masked: new RegExp(`\\b\\d{2,6}[-\\s]?[${MASK_CHARS}\\d]{2,6}[-\\s]?${MASK_CHARS}{3,6}\\b`)
+  // 2. 화면 제어용 버튼/UI 공통 키워드 (라벨 추출 시 제외할 노이즈)
+  const UI_EXCLUDES = new Set([
+    '선택', '조회', '검색', '초기화', '닫기', '저장', '삭제', '등록', 
+    '수정', '이전', '다음', '목록', '전체', '상세', '보기', '다운로드', 'excel'
+  ]);
+
+  // 라벨별 진단 결과 집계 맵 (중복 제거용)
+  const fieldSummary = new Map();
+
+  function recordField(rawLabel, rawValue) {
+    if (!rawLabel || !rawValue) return;
+
+    // 라벨 정제 (공백, 콜론, 특수기호 제거)
+    const label = rawLabel.replace(/[\s:：·\-_\t\r\n]+/g, ' ').trim();
+    const val = rawValue.trim();
+
+    // 유효성 검증: 라벨 길이 및 UI 노이즈 필터링
+    if (label.length < 2 || label.length > 20) return;
+    if (UI_EXCLUDES.has(label) || label === val) return;
+    if (val.length === 0) return;
+
+    if (!fieldSummary.has(label)) {
+      fieldSummary.set(label, {
+        maskedCount: 0,
+        unmaskedCount: 0,
+        totalCount: 0
+      });
     }
-  };
 
-  // 2. UI 라벨 키워드 그룹
-  const LABEL_GROUPS = [
-    { label: "주민등록번호", keywords: ["주민등록번호", "주민번호", "실명번호", "주민등록"] },
-    { label: "전화번호", keywords: ["전화번호", "휴대전화", "휴대폰", "핸드폰", "연락처", "수신번호", "팩스번호", "팩스"] },
-    { label: "성명/고객명", keywords: ["이름", "성명", "계약자명", "고객명", "피보험자명"] },
-    { label: "계좌번호", keywords: ["계좌번호", "계좌", "환불계좌", "입금계좌"] },
-    { label: "카드번호", keywords: ["카드번호", "신용카드번호", "체크카드번호"] },
-    { label: "증권/계약번호", keywords: ["증권번호", "계약번호", "청약번호"] },
-    { label: "주소", keywords: ["주소", "자택주소", "사업장주소", "배송지"] },
-    { label: "이메일", keywords: ["이메일", "전자우편", "e-mail", "email"] },
-    { label: "금액정보", keywords: ["납입금액", "결제금액", "보험료", "환급금"] },
-    { label: "기타코드", keywords: ["상품코드", "상품명", "은행코드"] }
-  ];
+    const item = fieldSummary.get(label);
+    item.totalCount += 1;
 
-  const DOWNLOAD_KEYWORDS = ['다운로드', '엑셀', 'excel', 'download', 'csv', 'export', '내려받기'];
-
-  // 접근 가능한 모든 프레임(iframe 포함) 수집
-  function getAllDocuments() {
-    const docs = [document];
-    document.querySelectorAll('iframe').forEach(iframe => {
-      try {
-        if (iframe.contentDocument) docs.push(iframe.contentDocument);
-      } catch (e) { /* Cross-Origin 프레임 접근 제한 무시 */ }
-    });
-    return docs;
+    // 마스킹 적용 여부 판정
+    if (MASK_PATTERN.test(val)) {
+      item.maskedCount += 1;
+    } else {
+      item.unmaskedCount += 1;
+    }
   }
 
-  const allDocs = getAllDocuments();
-  let totalFindings = [];
+  // --- [DOM 자동 탐색 엔진] ---
 
-  for (const doc of allDocs) {
-    // 1. 메뉴 경로 추출
-    const bc = doc.querySelector('.breadcrumb, .location, .navi, .menu-path, nav[aria-label="breadcrumb"]');
-    let menuPath = doc.title || document.title || "현재 페이지";
-    if (bc) {
-      const items = Array.from(bc.querySelectorAll('li, span, a'))
-        .map(el => el.innerText.trim())
-        .filter(t => t.length > 0);
-      if (items.length > 0) menuPath = items.join(' > ');
-    }
+  // 1) 表(Table) 구조 자동 분석
+  document.querySelectorAll('table').forEach(table => {
+    const rows = Array.from(table.querySelectorAll('tr'));
+    if (rows.length === 0) return;
 
-    // 2. 조회 구분
-    const hasPaging = !!doc.querySelector('.pagination, .paging, [class*="page"]');
-    const rowCount = doc.querySelectorAll('tr').length;
-    const queryType = (hasPaging || rowCount >= 4) ? "대량(목록) 조회" : "개별 조회";
-
-    // 3. 다운로드 버튼 탐지
-    let canDownload = "X";
-    doc.querySelectorAll('button, a, input').forEach(el => {
-      const text = `${el.innerText || ''} ${el.value || ''} ${el.title || ''}`.toLowerCase();
-      if (DOWNLOAD_KEYWORDS.some(kw => text.includes(kw))) canDownload = "O";
+    // A. 가로형 표 (th 바로 옆의 td)
+    rows.forEach(tr => {
+      const ths = tr.querySelectorAll('th');
+      ths.forEach(th => {
+        const nextTd = th.nextElementSibling;
+        if (nextTd && nextTd.tagName === 'TD') {
+          recordField(th.innerText, nextTd.innerText);
+        }
+      });
     });
 
-    const bodyText = doc.body ? doc.body.innerText || "" : "";
-
-    // 4. 정규식 포맷 검사
-    for (const [itemName, regexes] of Object.entries(REGEX_TARGETS)) {
-      const hasUnmasked = regexes.unmasked.test(bodyText);
-      const hasMasked = regexes.masked.test(bodyText);
-
-      let isExposed = "X";
-      let isMasked = "-";
-      let verdict = "해당 없음";
-
-      if (hasUnmasked || hasMasked) {
-        isExposed = "O";
-        if (hasUnmasked) {
-          isMasked = "X";
-          verdict = "취약";
-        } else {
-          isMasked = "O";
-          verdict = "양호";
+    // B. 세로형 목록 표 (상단 th 헤더 열 -> 하단 td 데이터 열 추적)
+    const headerRow = rows[0];
+    const headers = Array.from(headerRow.querySelectorAll('th, td'));
+    if (rows.length > 1 && headers.length > 1) {
+      headers.forEach((header, colIdx) => {
+        const colLabel = header.innerText;
+        // 최대 10개 행 데이터 샘플링 검사
+        for (let r = 1; r < Math.min(rows.length, 11); r++) {
+          const cells = rows[r].querySelectorAll('td');
+          if (cells[colIdx]) {
+            recordField(colLabel, cells[colIdx].innerText);
+          }
         }
-      }
-
-      totalFindings.push({
-        "메뉴 경로": menuPath,
-        "조회 구분": queryType,
-        "다운로드 기능": canDownload,
-        "점검 항목": itemName,
-        "노출 여부": isExposed,
-        "마스킹 여부": isMasked,
-        "최종 판정": verdict
       });
     }
-
-    // 5. 사람 시각 모사 라벨 탐색
-    for (const group of LABEL_GROUPS) {
-      let itemExposed = "X";
-      let isMasked = "-";
-      let verdict = "해당 없음";
-
-      let matchedValues = [];
-
-      // 방식 A: 인라인 텍스트 탐색 (예: "주민번호 : 123456-1******" 형태)
-      for (const kw of group.keywords) {
-        const inlineRegex = new RegExp(`${kw}\\s*[:：\\-]\\s*([^\\n\\r\\t,;<>]{2,30})`, 'g');
-        let match;
-        while ((match = inlineRegex.exec(bodyText)) !== null) {
-          const val = match[1].trim();
-          if (val && !group.keywords.some(k => val.includes(k))) {
-            matchedValues.push(val);
-          }
-        }
-      }
-
-      // 방식 B: 표(Table) 세로 열(Column) 추적 (헤더 아래 위치한 데이터 행들 탐색)
-      const tables = doc.querySelectorAll('table');
-      tables.forEach(table => {
-        const rows = Array.from(table.querySelectorAll('tr'));
-        if (rows.length < 2) return;
-
-        const headerRow = rows[0];
-        const headers = Array.from(headerRow.querySelectorAll('th, td'));
-        
-        headers.forEach((th, colIdx) => {
-          const thText = (th.innerText || "").replace(/[\s:：]/g, "");
-          if (group.keywords.some(kw => thText.includes(kw))) {
-            // 해당 열의 아래 데이터 행(최대 5개 행 표본) 값 확인
-            for (let r = 1; r < Math.min(rows.length, 6); r++) {
-              const cells = rows[r].querySelectorAll('td');
-              if (cells[colIdx]) {
-                const val = cells[colIdx].innerText.trim();
-                if (val && val.length > 1) matchedValues.push(val);
-              }
-            }
-          }
-        });
-      });
-
-      // 방식 C: 시각적 인접 요소 (Div/Span/Label 옆 또는 입력창)
-      const candidateElements = doc.querySelectorAll('th, dt, label, div, span, p, b, strong');
-      for (const el of candidateElements) {
-        // 긴 문장이 아닌 라벨 성격의 짧은 텍스트 요소만 필터
-        const rawText = el.innerText ? el.innerText.trim() : "";
-        if (rawText.length > 25 || rawText.length === 0) continue;
-
-        const cleanText = rawText.replace(/[\s:：]/g, "");
-        if (group.keywords.some(kw => cleanText === kw || cleanText.startsWith(kw))) {
-          let val = "";
-
-          // 1) 형제 요소 확인
-          const sibling = el.nextElementSibling;
-          if (sibling) {
-            val = sibling.innerText ? sibling.innerText.trim() : (sibling.value || "");
-          }
-          // 2) 부모의 다음 형제 요소 확인 (Flex/Grid 컬럼 구조 대응)
-          if (!val && el.parentElement && el.parentElement.nextElementSibling) {
-            const parentSibling = el.parentElement.nextElementSibling;
-            val = parentSibling.innerText ? parentSibling.innerText.trim() : (parentSibling.value || "");
-          }
-          // 3) label의 for 속성 타겟 input 확인
-          if (!val && el.tagName === 'LABEL' && el.htmlFor) {
-            const inputEl = doc.getElementById(el.htmlFor);
-            if (inputEl) val = inputEl.value || inputEl.placeholder || "";
-          }
-
-          if (val && val.length > 1 && !cleanText.includes(val.replace(/\s/g, ""))) {
-            matchedValues.push(val);
-          }
-        }
-      }
-
-      // 판정 로직: 수집된 값들 중 하나라도 노출이 있으면 점검
-      if (matchedValues.length > 0) {
-        itemExposed = "O";
-        // 수집된 값들 중 마스킹 기호가 없는 원문이 하나라도 노출되어 있으면 취약
-        const hasUnmaskedValue = matchedValues.some(v => !maskRegex.test(v));
-        if (hasUnmaskedValue) {
-          isMasked = "X";
-          verdict = "취약";
-        } else {
-          isMasked = "O";
-          verdict = "양호";
-        }
-      }
-
-      totalFindings.push({
-        "메뉴 경로": menuPath,
-        "조회 구분": queryType,
-        "다운로드 기능": canDownload,
-        "점검 항목": group.label,
-        "노출 여부": itemExposed,
-        "마스킹 여부": isMasked,
-        "최종 판정": verdict
-      });
-    }
-  }
-
-  // 중복 항목 정리 및 취약 항목 우선 정렬
-  const uniqueFindings = [];
-  const seenKeys = new Set();
-  for (const item of totalFindings) {
-    const key = `${item["점검 항목"]}_${item["노출 여부"]}_${item["마스킹 여부"]}`;
-    if (!seenKeys.has(key)) {
-      seenKeys.add(key);
-      uniqueFindings.push(item);
-    }
-  }
-
-  uniqueFindings.sort((a, b) => {
-    if (a["노출 여부"] === b["노출 여부"]) {
-      return (a["마스킹 여부"] === "X" ? -1 : 1);
-    }
-    return a["노출 여부"] === "O" ? -1 : 1;
   });
 
-  console.clear();
-  console.log("%c[+] 인간 시각 모사 점검 완료 (iframe/그리드/인라인 다각도 분석)", "color: #00e676; font-size: 14px; font-weight: bold;");
-  console.table(uniqueFindings);
+  // 2) dt - dd 정의 목록 구조
+  document.querySelectorAll('dt').forEach(dt => {
+    const nextDd = dt.nextElementSibling;
+    if (nextDd && nextDd.tagName === 'DD') {
+      recordField(dt.innerText, nextDd.innerText);
+    }
+  });
 
-  return uniqueFindings;
-})();
+  // 3) label - input/select 구조
+  document.querySelectorAll('label').forEach(labelEl => {
+    let val = '';
+    if (labelEl.htmlFor) {
+      const target = document.getElementById(labelEl.htmlFor);
+      if (target) val = target.value || target.placeholder || '';
+    } else {
+      const innerInput = labelEl.querySelector('input, select');
+      if (innerInput) val = innerInput.value || innerInput.placeholder || '';
+    }
+    if (val) recordField(labelEl.innerText, val);
+  });
+
+  // 4) 콜론(:) 인라인 텍스트 및 Div/Span 그리드 구조
+  const textContainers = document.querySelectorAll('p, div, span, li');
+  textContainers.forEach(el => {
+    // 직계 자식이 없고 순수 텍스트만 있는 요소 대상
+    if (el.children.length === 0 && el.innerText) {
+      const text = el.innerText.trim();
+      const colonMatch = text.match(/^([^:：\n\r]{2,15})[:：]\s*(.+)$/);
+      if (colonMatch) {
+        recordField(colonMatch[1], colonMatch[2]);
+      }
+    }
+  });
+
+  // --- [결과 데이터 가공 및 중복 정리] ---
+  const results = [];
+  for (const [label, data] of fieldSummary.entries()) {
+    let maskingStatus = "";
+    let verdict = "";
+
+    if (data.unmaskedCount > 0 && data.maskedCount === 0) {
+      maskingStatus = "X (전부 미적용)";
+      verdict = "취약";
+    } else if (data.unmaskedCount === 0 && data.maskedCount > 0) {
+      maskingStatus = "O (전부 마스킹)";
+      verdict = "양호";
+    } else {
+      maskingStatus = `△ (혼재: 마스킹 ${data.maskedCount}건 / 미적용 ${data.unmaskedCount}건)`;
+      verdict = "취약 의심 (확인 필요)";
+    }
+
+    results.push({
+      "항목명 (라벨)": label,
+      "화면 노출 여부": "O",
+      "마스킹 여부": maskingStatus,
+      "최종 판정": verdict,
+      "발견 건수": `${data.totalCount}건`
+    });
+  }
+
+  // 정렬: 취약(마스킹 X) 항목을 맨 위에 배치
+  results.sort((a, b) => {
+    const score = v => (v.includes("취약") ? (v === "취약" ? 3 : 2) : 1);
+    return score(b["최종 판정"]) - score(a["최종 판정"]);
+  });
+
+  // --- [콘솔 표 출력] ---
+  console.clear();
+  console.log("%c[+] 화면 내 전수 항목 동적 탐색 진단 결과", "color: #00e676; font-size: 15px; font-weight: bold;");
+  
+  if (results.length === 0) {
+    console.warn("⚠️ 화면에서 분석 가능한 데이터 라벨을 찾지 못했습니다. (프레임 확인 필요)");
+  } else {
+    console.table(results);
+  }
+
+  return results;
+})(); 
 ```
