@@ -3,71 +3,180 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>블로그 글쓰기 에디터 | glitchsframe00</title>
-  <!-- Font & TOAST UI Editor / Prism CSS -->
+  <title>블로그 글쓰기 관리자 | glitchsframe00</title>
+  <!-- Pretendard Font & TOAST UI Editor CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
   <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
-  <link rel="stylesheet" href="https://uicdn.toast.com/editor-plugin-code-syntax-highlight/latest/toastui-editor-plugin-code-syntax-highlight.min.css" />
   
   <style>
-    :root {
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --primary-light: #eff6ff;
-      --text: #1e293b;
-      --text-muted: #64748b;
-      --border: #e2e8f0;
-      --bg: #f8fafc;
-      --surface: #ffffff;
-    }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
-    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
-    .brand { font-size: 1.1rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; text-decoration: none; }
-    .badge { font-size: 0.75rem; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 9999px; }
-    .actions { display: flex; align-items: center; gap: 8px; }
-    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 0.88rem; font-weight: 600; border-radius: 8px; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; }
-    .btn-secondary { background: var(--surface); border-color: var(--border); color: var(--text); }
-    .btn-secondary:hover { background: #f1f5f9; }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-primary:hover { background: var(--primary-hover); }
+    body { background-color: #f8fafc; color: #1e293b; min-height: 100vh; display: flex; flex-direction: column; }
+    
+    /* Top Header */
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .brand { font-size: 1.15rem; font-weight: 700; color: #0f172a; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+    .badge { font-size: 0.75rem; background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 9999px; font-weight: 600; }
+    
+    .actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+    .btn-secondary { background: #ffffff; border-color: #cbd5e1; color: #334155; }
+    .btn-secondary:hover { background: #f1f5f9; border-color: #94a3b8; }
+    .btn-primary { background: #2563eb; color: #ffffff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-success { background: #10b981; color: #ffffff; }
+    .btn-success:hover { background: #059669; }
+
+    /* Setting Panel (페이지 상단 인라인 패널) */
+    .settings-panel {
+      background: #ffffff;
+      border-bottom: 2px solid #2563eb;
+      padding: 20px 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .settings-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .guide-alert {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-left: 4px solid #2563eb;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: #1e40af;
+      line-height: 1.5;
+      margin-bottom: 14px;
+    }
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 12px;
+      align-items: end;
+    }
+    @media (max-width: 860px) {
+      .settings-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Main Container */
     main { flex: 1; max-width: 1200px; width: 100%; margin: 16px auto; padding: 0 16px; display: flex; flex-direction: column; gap: 14px; }
-    .meta-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+    .meta-box { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
     .title-input { width: 100%; font-size: 1.75rem; font-weight: 700; border: none; outline: none; background: transparent; border-bottom: 2px solid transparent; padding-bottom: 4px; }
-    .title-input:focus { border-bottom-color: var(--primary); }
+    .title-input:focus { border-bottom-color: #2563eb; }
+    
     .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
     .form-group { display: flex; flex-direction: column; gap: 5px; }
-    .form-label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
-    .form-control { padding: 8px 12px; font-size: 0.88rem; border: 1px solid var(--border); border-radius: 6px; outline: none; background: #fff; }
-    .form-control:focus { border-color: var(--primary); }
-    .editor-container { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-    .status-bar { display: flex; justify-content: space-between; padding: 8px 16px; background: var(--surface); border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--text-muted); }
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 100; }
-    .modal-backdrop.active { display: flex; }
-    .modal-card { background: var(--surface); border-radius: 12px; width: 95%; max-width: 540px; padding: 22px; display: flex; flex-direction: column; gap: 16px; max-height: 90vh; overflow-y: auto; }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-    .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
-    .toast { background: #1e293b; color: white; padding: 10px 18px; border-radius: 6px; font-size: 0.88rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .form-label { font-size: 0.82rem; font-weight: 600; color: #64748b; }
+    .form-control { padding: 9px 12px; font-size: 0.88rem; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; background: #fff; }
+    .form-control:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    
+    /* Editor Box */
+    .editor-container { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; min-height: 580px; }
+    .status-bar { display: flex; justify-content: space-between; padding: 8px 16px; background: #ffffff; border-top: 1px solid #e2e8f0; font-size: 0.8rem; color: #64748b; }
+
+    /* Toast Alert */
+    .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 999999; display: flex; flex-direction: column; gap: 8px; }
+    .toast { background: #1e293b; color: white; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); }
     .toast.success { background: #059669; }
-    pre.code-preview { background: #0f172a; color: #f8fafc; padding: 12px; border-radius: 6px; font-size: 0.82rem; overflow-x: auto; max-height: 320px; }
+    .toast.error { background: #dc2626; }
   </style>
 </head>
 <body>
 
+  <!-- 상단 네비게이션 -->
   <header>
     <a href="/" class="brand">
       <span>✍️ 블로그 에디터</span>
-      <span class="badge" id="repoBadge">glitchsframe00.github.io</span>
+      <span class="badge" id="statusBadge">연동 확인 중...</span>
     </a>
     <div class="actions">
-      <button class="btn btn-secondary" onclick="previewMarkdown()"><span>👁️ .md 미리보기</span></button>
-      <button class="btn btn-secondary" onclick="openSettings()"><span>⚙️ 저장소/토큰 설정</span></button>
-      <button class="btn btn-secondary" onclick="saveDraft()"><span>💾 임시저장</span></button>
-      <button class="btn btn-primary" id="publishBtn" onclick="publishPost()"><span>🚀 발행하기 (저장)</span></button>
+      <button class="btn btn-secondary" onclick="toggleSettingsPanel()">
+        <span>⚙️ 저장소/토큰 설정</span>
+      </button>
+      <button class="btn btn-secondary" onclick="saveDraft()">
+        <span>💾 임시저장</span>
+      </button>
+      <button class="btn btn-primary" id="publishBtn" onclick="publishPost()">
+        <span>🚀 발행하기 (저장)</span>
+      </button>
     </div>
   </header>
 
+  <!-- 상단 토큰/저장소 설정 패널 -->
+  <div class="settings-panel" id="settingsPanel">
+    <div class="settings-title">
+      <span>⚙️ GitHub 저장소 및 토큰(PAT) 연동</span>
+      <span style="font-size:0.8rem; font-weight:normal; color:#64748b;">(최초 1회만 등록하시면 본인 컴퓨터에 자동 저장됩니다)</span>
+    </div>
+
+    <div class="guide-alert">
+      💡 <strong>토큰 입력 방법:</strong> 
+      GitHub에서 생성하신 <code>ghp_...</code> 토큰을 아래 첫 번째 칸에 붙여넣고 <strong>[💾 설정 저장]</strong> 버튼을 누르시면 됩니다.<br>
+      (토큰은 외부 서버로 전송되지 않고 브라우저 <code>localStorage</code>에만 보관됩니다)
+    </div>
+
+    <div class="settings-grid">
+      <div class="form-group">
+        <label class="form-label">GitHub Personal Access Token (PAT) *</label>
+        <input type="password" id="ghToken" class="form-control" placeholder="ghp_로 시작하는 토큰 붙여넣기" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">저장소 (Owner/Repo)</label>
+        <input type="text" id="ghRepo" class="form-control" value="glitchsframe00/glitchsframe00.github.io" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">브랜치 / 저장 폴더</label>
+        <div style="display:flex; gap:6px;">
+          <input type="text" id="ghBranch" class="form-control" value="main" style="width:40%;" placeholder="main" />
+          <input type="text" id="ghPath" class="form-control" value="_posts" style="width:60%;" placeholder="_posts" />
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-success" style="width:100%; justify-content:center;" onclick="saveSettings()">
+          💾 설정 저장
+        </button>
+        <button class="btn btn-secondary" onclick="toggleSettingsPanel()">
+          닫기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 메인 글 작성 영역 -->
   <main>
     <div class="meta-box">
       <input type="text" id="postTitle" class="title-input" placeholder="제목을 입력하세요..." />
@@ -82,7 +191,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">파일명(URL 슬러그)</label>
-          <input type="text" id="postSlug" class="form-control" placeholder="자동 생성 (직접 입력 가능)" />
+          <input type="text" id="postSlug" class="form-control" placeholder="자동 생성 (직접 수정 가능)" />
         </div>
         <div class="form-group">
           <label class="form-label">작성 일시</label>
@@ -91,6 +200,7 @@
       </div>
     </div>
 
+    <!-- TOAST UI Editor -->
     <div class="editor-container">
       <div id="editor"></div>
       <div class="status-bar">
@@ -102,72 +212,91 @@
 
   <div class="toast-container" id="toastContainer"></div>
 
-  <!-- 설정 모달 -->
-  <div class="modal-backdrop" id="settingsModal">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3>⚙️ GitHub 저장소 및 토큰 설정</h3>
-        <button style="border:none; background:none; font-size:1.2rem; cursor:pointer;" onclick="closeSettings()">&times;</button>
-      </div>
-      <p style="font-size:0.83rem; color:var(--text-muted); line-height:1.5;">
-        GitHub Personal Access Token(PAT)을 입력해주세요. (repo 권한 필요)<br>
-        토큰은 본인 브라우저(localStorage)에만 안전하게 저장됩니다.
-      </p>
-      <div class="form-group">
-        <label class="form-label">GitHub Token (PAT) *</label>
-        <input type="password" id="ghToken" class="form-control" placeholder="ghp_xxxxxxxxxxxx" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">저장소 소유자 (Owner)</label>
-        <input type="text" id="ghOwner" class="form-control" value="glitchsframe00" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">저장소 이름 (Repo)</label>
-        <input type="text" id="ghRepo" class="form-control" value="glitchsframe00.github.io" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">브랜치 (Branch)</label>
-        <input type="text" id="ghBranch" class="form-control" value="main" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">저장 폴더</label>
-        <input type="text" id="ghPath" class="form-control" value="_posts" />
-      </div>
-      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
-        <button class="btn btn-secondary" onclick="closeSettings()">취소</button>
-        <button class="btn btn-primary" onclick="saveSettings()">설정 저장</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 미리보기 모달 -->
-  <div class="modal-backdrop" id="previewModal">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3>📄 생성될 Markdown (.md) 미리보기</h3>
-        <button style="border:none; background:none; font-size:1.2rem; cursor:pointer;" onclick="closePreview()">&times;</button>
-      </div>
-      <pre class="code-preview" id="previewText"></pre>
-      <div style="display:flex; justify-content:flex-end; gap:8px;">
-        <button class="btn btn-secondary" onclick="closePreview()">닫기</button>
-        <button class="btn btn-primary" onclick="closePreview(); publishPost();">이대로 발행</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Scripts -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+  <!-- TOAST UI Editor Script -->
   <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
-  <script src="https://uicdn.toast.com/editor-plugin-code-syntax-highlight/latest/toastui-editor-plugin-code-syntax-highlight-all.min.js"></script>
   <script src="https://uicdn.toast.com/editor/latest/i18n/ko-kr.min.js"></script>
 
   <script>
-    let editor;
+    let editor = null;
+
+    function toggleSettingsPanel() {
+      const panel = document.getElementById('settingsPanel');
+      if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+      } else {
+        panel.style.display = 'none';
+      }
+    }
+
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerText = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3500);
+    }
+
+    function saveSettings() {
+      const token = document.getElementById('ghToken').value.trim();
+      const repoFull = document.getElementById('ghRepo').value.trim();
+      const branch = document.getElementById('ghBranch').value.trim() || 'main';
+      const path = document.getElementById('ghPath').value.trim() || '_posts';
+
+      if (!token) {
+        alert('GitHub Token(PAT)을 입력해주세요.');
+        document.getElementById('ghToken').focus();
+        return;
+      }
+
+      const parts = repoFull.split('/');
+      const owner = parts[0] ? parts[0].trim() : 'glitchsframe00';
+      const repo = parts[1] ? parts[1].trim() : 'glitchsframe00.github.io';
+
+      localStorage.setItem('gh_token', token);
+      localStorage.setItem('gh_owner', owner);
+      localStorage.setItem('gh_repo', repo);
+      localStorage.setItem('gh_branch', branch);
+      localStorage.setItem('gh_path', path);
+
+      updateBadge(true);
+      document.getElementById('settingsPanel').style.display = 'none';
+      showToast('✅ GitHub 연동 설정이 성공적으로 저장되었습니다!', 'success');
+    }
+
+    function loadSettings() {
+      const token = localStorage.getItem('gh_token') || '';
+      const owner = localStorage.getItem('gh_owner') || 'glitchsframe00';
+      const repo = localStorage.getItem('gh_repo') || 'glitchsframe00.github.io';
+      const branch = localStorage.getItem('gh_branch') || 'main';
+      const path = localStorage.getItem('gh_path') || '_posts';
+
+      document.getElementById('ghToken').value = token;
+      document.getElementById('ghRepo').value = `${owner}/${repo}`;
+      document.getElementById('ghBranch').value = branch;
+      document.getElementById('ghPath').value = path;
+
+      if (token) {
+        document.getElementById('settingsPanel').style.display = 'none';
+        updateBadge(true);
+      } else {
+        document.getElementById('settingsPanel').style.display = 'block';
+        updateBadge(false);
+      }
+    }
+
+    function updateBadge(isConfigured) {
+      const badge = document.getElementById('statusBadge');
+      if (isConfigured) {
+        badge.innerText = '✅ GitHub 연동됨';
+        badge.style.background = '#dcfce7';
+        badge.style.color = '#15803d';
+      } else {
+        badge.innerText = '⚠️ 토큰 미등록';
+        badge.style.background = '#fee2e2';
+        badge.style.color = '#b91c1c';
+      }
+    }
 
     function getFormattedDate() {
       const now = new Date();
@@ -176,33 +305,34 @@
     }
 
     function init() {
-      const { Editor } = toastui;
-      editor = new Editor({
-        el: document.querySelector('#editor'),
-        height: '600px',
-        initialEditType: 'wysiwyg',
-        previewStyle: 'vertical',
-        language: 'ko-KR',
-        placeholder: '내용을 작성하세요. 상단 툴바의 [< > 코드블럭]을 누르면 언어별 문법 강조가 적용됩니다.',
-        plugins: [Editor.plugin.codeSyntaxHighlight],
-        toolbarItems: [
-          ['heading', 'bold', 'italic', 'strike'],
-          ['hr', 'quote'],
-          ['ul', 'ol', 'task'],
-          ['table', 'image', 'link'],
-          ['code', 'codeblock']
-        ],
-        events: {
-          change: () => {
-            const len = editor.getMarkdown().length;
-            document.getElementById('charCount').innerText = `글자 수: ${len}자`;
-          }
-        }
-      });
-
-      document.getElementById('postDate').value = getFormattedDate();
       loadSettings();
-      loadDraft();
+      document.getElementById('postDate').value = getFormattedDate();
+
+      try {
+        editor = new toastui.Editor({
+          el: document.querySelector('#editor'),
+          height: '600px',
+          initialEditType: 'wysiwyg',
+          previewStyle: 'vertical',
+          language: 'ko-KR',
+          placeholder: '내용을 작성하세요. 상단 툴바의 [< > 코드블럭] 버튼으로 파이썬, C, 자바스크립트 등 다양한 코드를 쉽게 넣으실 수 있습니다.',
+          toolbarItems: [
+            ['heading', 'bold', 'italic', 'strike'],
+            ['hr', 'quote'],
+            ['ul', 'ol', 'task'],
+            ['table', 'image', 'link'],
+            ['code', 'codeblock']
+          ],
+          events: {
+            change: () => {
+              const len = editor.getMarkdown().length;
+              document.getElementById('charCount').innerText = `글자 수: ${len}자`;
+            }
+          }
+        });
+      } catch (e) {
+        console.error('Editor init error:', e);
+      }
 
       document.getElementById('postTitle').addEventListener('input', (e) => {
         const slug = document.getElementById('postSlug');
@@ -214,23 +344,17 @@
         document.getElementById('postSlug').dataset.manual = "true";
       });
 
+      loadDraft();
+
       setInterval(() => {
-        if (document.getElementById('postTitle').value.trim() || editor.getMarkdown().trim()) {
+        if (document.getElementById('postTitle').value.trim() || (editor && editor.getMarkdown().trim())) {
           saveDraft(true);
         }
       }, 40000);
     }
 
-    function showToast(msg, type = 'info') {
-      const box = document.getElementById('toastContainer');
-      const el = document.createElement('div');
-      el.className = `toast ${type}`;
-      el.innerText = msg;
-      box.appendChild(el);
-      setTimeout(() => el.remove(), 3200);
-    }
-
     function saveDraft(silent = false) {
+      if (!editor) return;
       const draft = {
         title: document.getElementById('postTitle').value,
         cat: document.getElementById('postCategory').value,
@@ -239,17 +363,17 @@
         body: editor.getMarkdown(),
         time: new Date().toLocaleTimeString()
       };
-      localStorage.setItem('editor_draft', JSON.stringify(draft));
+      localStorage.setItem('blog_draft', JSON.stringify(draft));
       document.getElementById('saveStatus').innerText = `마지막 저장: ${draft.time}`;
-      if (!silent) showToast('임시 저장이 완료되었습니다.', 'success');
+      if (!silent) showToast('임시 저장이 완료되었습니다. 💾', 'success');
     }
 
     function loadDraft() {
-      const raw = localStorage.getItem('editor_draft');
-      if (raw) {
+      const raw = localStorage.getItem('blog_draft');
+      if (raw && editor) {
         try {
           const d = JSON.parse(raw);
-          if (confirm(`작성 중이던 임시 저장 글("${d.title || '제목 없음'}")을 불러오시겠습니까?`)) {
+          if (confirm(`작성 중이던 임시 저장 글("${d.title || '제목 없음'}")이 있습니다. 불러오시겠습니까?`)) {
             document.getElementById('postTitle').value = d.title || '';
             document.getElementById('postCategory').value = d.cat || '';
             document.getElementById('postTags').value = d.tags || '';
@@ -260,64 +384,45 @@
       }
     }
 
-    function openSettings() { document.getElementById('settingsModal').classList.add('active'); }
-    function closeSettings() { document.getElementById('settingsModal').classList.remove('active'); }
-
-    function saveSettings() {
-      const token = document.getElementById('ghToken').value.trim();
-      if (!token) return alert('GitHub Token을 입력해주세요.');
-      localStorage.setItem('gh_token', token);
-      localStorage.setItem('gh_owner', document.getElementById('ghOwner').value.trim());
-      localStorage.setItem('gh_repo', document.getElementById('ghRepo').value.trim());
-      localStorage.setItem('gh_branch', document.getElementById('ghBranch').value.trim());
-      localStorage.setItem('gh_path', document.getElementById('ghPath').value.trim());
-      closeSettings();
-      showToast('저장소 설정이 저장되었습니다.', 'success');
-    }
-
-    function loadSettings() {
-      document.getElementById('ghToken').value = localStorage.getItem('gh_token') || '';
-      document.getElementById('ghOwner').value = localStorage.getItem('gh_owner') || 'glitchsframe00';
-      document.getElementById('ghRepo').value = localStorage.getItem('gh_repo') || 'glitchsframe00.github.io';
-      document.getElementById('ghBranch').value = localStorage.getItem('gh_branch') || 'main';
-      document.getElementById('ghPath').value = localStorage.getItem('gh_path') || '_posts';
-      document.getElementById('repoBadge').innerText = `${document.getElementById('ghOwner').value}/${document.getElementById('ghRepo').value}`;
-    }
-
     function buildMarkdown() {
       const title = document.getElementById('postTitle').value.trim();
       const date = document.getElementById('postDate').value;
       const cat = document.getElementById('postCategory').value.trim();
       const tags = document.getElementById('postTags').value.trim();
+      
       let fm = `---\nlayout: post\ntitle: "${title.replace(/"/g, '\\"')}"\ndate: ${date}\n`;
       if (cat) fm += `categories: [${cat}]\n`;
       if (tags) fm += `tags: [${tags.split(',').map(s=>s.trim()).filter(Boolean).join(', ')}]\n`;
       fm += `---\n\n`;
-      return fm + editor.getMarkdown();
+      
+      return fm + (editor ? editor.getMarkdown() : '');
     }
-
-    function previewMarkdown() {
-      document.getElementById('previewText').innerText = buildMarkdown();
-      document.getElementById('previewModal').classList.add('active');
-    }
-    function closePreview() { document.getElementById('previewModal').classList.remove('active'); }
 
     async function publishPost() {
       const title = document.getElementById('postTitle').value.trim();
-      if (!title) return alert('제목을 입력하세요.');
-      const body = editor.getMarkdown().trim();
-      if (!body) return alert('본문 내용을 입력하세요.');
+      if (!title) {
+        alert('글 제목을 입력해주세요.');
+        document.getElementById('postTitle').focus();
+        return;
+      }
+      const body = editor ? editor.getMarkdown().trim() : '';
+      if (!body) {
+        alert('본문 내용을 입력해주세요.');
+        return;
+      }
 
       const token = localStorage.getItem('gh_token');
       if (!token) {
-        alert('GitHub Token을 먼저 등록해주세요.');
-        return openSettings();
+        alert('GitHub Token이 등록되어 있지 않습니다. 상단 설정 창에서 토큰을 먼저 등록해주세요.');
+        document.getElementById('settingsPanel').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
       }
 
       const owner = localStorage.getItem('gh_owner') || 'glitchsframe00';
       const repo = localStorage.getItem('gh_repo') || 'glitchsframe00.github.io';
       const branch = localStorage.getItem('gh_branch') || 'main';
-      const dir = (localStorage.getItem('gh_path') || '_posts').replace(/^\\/|\\/$/g, '');
+      const dir = (localStorage.getItem('gh_path') || '_posts').replace(/^\/|\/$/g, '');
 
       const now = new Date();
       const p = n => String(n).padStart(2, '0');
@@ -326,8 +431,9 @@
       const filePath = `${dir}/${dateStr}-${slug}.md`;
 
       const btn = document.getElementById('publishBtn');
+      const originalText = btn.innerHTML;
       btn.disabled = true;
-      btn.innerText = '발행 중...';
+      btn.innerHTML = '<span>⏳ 발행 및 커밋 중...</span>';
 
       try {
         const content = buildMarkdown();
@@ -351,18 +457,18 @@
         const data = await res.json();
         if (res.ok) {
           showToast('🎉 성공적으로 발행되었습니다!', 'success');
-          localStorage.removeItem('editor_draft');
-          if (confirm(`성공적으로 저장되었습니다!\\n\\n경로: ${filePath}\\n커밋 페이지를 확인하시겠습니까?`)) {
+          localStorage.removeItem('blog_draft');
+          if (confirm(`성공적으로 저장 및 커밋되었습니다!\n\n경로: ${filePath}\nGitHub 커밋 페이지를 확인하시겠습니까?`)) {
             window.open(data.commit.html_url, '_blank');
           }
         } else {
-          alert(`발행 실패 (${res.status}): ${data.message || '오류 발생'}`);
+          alert(`발행 실패 (${res.status}): ${data.message || '오류 발생'}\n토큰에 repo 권한이 있는지 확인해주세요.`);
         }
       } catch (err) {
-        alert(`네트워크 오류: ${err.message}`);
+        alert(`네트워크 요청 오류: ${err.message}`);
       } finally {
         btn.disabled = false;
-        btn.innerText = '🚀 발행하기 (저장)';
+        btn.innerHTML = originalText;
       }
     }
 
