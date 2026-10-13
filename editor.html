@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>블로그 글쓰기 에디터 | glitchsframe00</title>
+  <!-- Font & TOAST UI Editor / Prism CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
+  <link rel="stylesheet" href="https://uicdn.toast.com/editor-plugin-code-syntax-highlight/latest/toastui-editor-plugin-code-syntax-highlight.min.css" />
+  
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+    .brand { font-size: 1.1rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; text-decoration: none; }
+    .badge { font-size: 0.75rem; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 9999px; }
+    .actions { display: flex; align-items: center; gap: 8px; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 0.88rem; font-weight: 600; border-radius: 8px; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; }
+    .btn-secondary { background: var(--surface); border-color: var(--border); color: var(--text); }
+    .btn-secondary:hover { background: #f1f5f9; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    main { flex: 1; max-width: 1200px; width: 100%; margin: 16px auto; padding: 0 16px; display: flex; flex-direction: column; gap: 14px; }
+    .meta-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+    .title-input { width: 100%; font-size: 1.75rem; font-weight: 700; border: none; outline: none; background: transparent; border-bottom: 2px solid transparent; padding-bottom: 4px; }
+    .title-input:focus { border-bottom-color: var(--primary); }
+    .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+    .form-control { padding: 8px 12px; font-size: 0.88rem; border: 1px solid var(--border); border-radius: 6px; outline: none; background: #fff; }
+    .form-control:focus { border-color: var(--primary); }
+    .editor-container { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .status-bar { display: flex; justify-content: space-between; padding: 8px 16px; background: var(--surface); border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--text-muted); }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 100; }
+    .modal-backdrop.active { display: flex; }
+    .modal-card { background: var(--surface); border-radius: 12px; width: 95%; max-width: 540px; padding: 22px; display: flex; flex-direction: column; gap: 16px; max-height: 90vh; overflow-y: auto; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+    .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+    .toast { background: #1e293b; color: white; padding: 10px 18px; border-radius: 6px; font-size: 0.88rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .toast.success { background: #059669; }
+    pre.code-preview { background: #0f172a; color: #f8fafc; padding: 12px; border-radius: 6px; font-size: 0.82rem; overflow-x: auto; max-height: 320px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="/" class="brand">
+      <span>✍️ 블로그 에디터</span>
+      <span class="badge" id="repoBadge">glitchsframe00.github.io</span>
+    </a>
+    <div class="actions">
+      <button class="btn btn-secondary" onclick="previewMarkdown()"><span>👁️ .md 미리보기</span></button>
+      <button class="btn btn-secondary" onclick="openSettings()"><span>⚙️ 저장소/토큰 설정</span></button>
+      <button class="btn btn-secondary" onclick="saveDraft()"><span>💾 임시저장</span></button>
+      <button class="btn btn-primary" id="publishBtn" onclick="publishPost()"><span>🚀 발행하기 (저장)</span></button>
+    </div>
+  </header>
+
+  <main>
+    <div class="meta-box">
+      <input type="text" id="postTitle" class="title-input" placeholder="제목을 입력하세요..." />
+      <div class="meta-grid">
+        <div class="form-group">
+          <label class="form-label">카테고리</label>
+          <input type="text" id="postCategory" class="form-control" placeholder="예: 개발, 일상" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">태그 (쉼표로 구분)</label>
+          <input type="text" id="postTags" class="form-control" placeholder="예: python, github-pages" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">파일명(URL 슬러그)</label>
+          <input type="text" id="postSlug" class="form-control" placeholder="자동 생성 (직접 입력 가능)" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">작성 일시</label>
+          <input type="text" id="postDate" class="form-control" readonly />
+        </div>
+      </div>
+    </div>
+
+    <div class="editor-container">
+      <div id="editor"></div>
+      <div class="status-bar">
+        <span id="charCount">글자 수: 0자</span>
+        <span id="saveStatus">자동 저장 대기 중</span>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- 설정 모달 -->
+  <div class="modal-backdrop" id="settingsModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>⚙️ GitHub 저장소 및 토큰 설정</h3>
+        <button style="border:none; background:none; font-size:1.2rem; cursor:pointer;" onclick="closeSettings()">&times;</button>
+      </div>
+      <p style="font-size:0.83rem; color:var(--text-muted); line-height:1.5;">
+        GitHub Personal Access Token(PAT)을 입력해주세요. (repo 권한 필요)<br>
+        토큰은 본인 브라우저(localStorage)에만 안전하게 저장됩니다.
+      </p>
+      <div class="form-group">
+        <label class="form-label">GitHub Token (PAT) *</label>
+        <input type="password" id="ghToken" class="form-control" placeholder="ghp_xxxxxxxxxxxx" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">저장소 소유자 (Owner)</label>
+        <input type="text" id="ghOwner" class="form-control" value="glitchsframe00" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">저장소 이름 (Repo)</label>
+        <input type="text" id="ghRepo" class="form-control" value="glitchsframe00.github.io" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">브랜치 (Branch)</label>
+        <input type="text" id="ghBranch" class="form-control" value="main" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">저장 폴더</label>
+        <input type="text" id="ghPath" class="form-control" value="_posts" />
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+        <button class="btn btn-secondary" onclick="closeSettings()">취소</button>
+        <button class="btn btn-primary" onclick="saveSettings()">설정 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 미리보기 모달 -->
+  <div class="modal-backdrop" id="previewModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>📄 생성될 Markdown (.md) 미리보기</h3>
+        <button style="border:none; background:none; font-size:1.2rem; cursor:pointer;" onclick="closePreview()">&times;</button>
+      </div>
+      <pre class="code-preview" id="previewText"></pre>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn btn-secondary" onclick="closePreview()">닫기</button>
+        <button class="btn btn-primary" onclick="closePreview(); publishPost();">이대로 발행</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+  <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+  <script src="https://uicdn.toast.com/editor-plugin-code-syntax-highlight/latest/toastui-editor-plugin-code-syntax-highlight-all.min.js"></script>
+  <script src="https://uicdn.toast.com/editor/latest/i18n/ko-kr.min.js"></script>
+
+  <script>
+    let editor;
+
+    function getFormattedDate() {
+      const now = new Date();
+      const p = n => String(n).padStart(2, '0');
+      return `${now.getFullYear()}-${p(now.getMonth()+1)}-${p(now.getDate())} ${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())} +0900`;
+    }
+
+    function init() {
+      const { Editor } = toastui;
+      editor = new Editor({
+        el: document.querySelector('#editor'),
+        height: '600px',
+        initialEditType: 'wysiwyg',
+        previewStyle: 'vertical',
+        language: 'ko-KR',
+        placeholder: '내용을 작성하세요. 상단 툴바의 [< > 코드블럭]을 누르면 언어별 문법 강조가 적용됩니다.',
+        plugins: [Editor.plugin.codeSyntaxHighlight],
+        toolbarItems: [
+          ['heading', 'bold', 'italic', 'strike'],
+          ['hr', 'quote'],
+          ['ul', 'ol', 'task'],
+          ['table', 'image', 'link'],
+          ['code', 'codeblock']
+        ],
+        events: {
+          change: () => {
+            const len = editor.getMarkdown().length;
+            document.getElementById('charCount').innerText = `글자 수: ${len}자`;
+          }
+        }
+      });
+
+      document.getElementById('postDate').value = getFormattedDate();
+      loadSettings();
+      loadDraft();
+
+      document.getElementById('postTitle').addEventListener('input', (e) => {
+        const slug = document.getElementById('postSlug');
+        if (!slug.dataset.manual) {
+          slug.value = e.target.value.trim().toLowerCase().replace(/[^a-z0-9가-힣\s-]/g, '').replace(/\s+/g, '-');
+        }
+      });
+      document.getElementById('postSlug').addEventListener('input', () => {
+        document.getElementById('postSlug').dataset.manual = "true";
+      });
+
+      setInterval(() => {
+        if (document.getElementById('postTitle').value.trim() || editor.getMarkdown().trim()) {
+          saveDraft(true);
+        }
+      }, 40000);
+    }
+
+    function showToast(msg, type = 'info') {
+      const box = document.getElementById('toastContainer');
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      el.innerText = msg;
+      box.appendChild(el);
+      setTimeout(() => el.remove(), 3200);
+    }
+
+    function saveDraft(silent = false) {
+      const draft = {
+        title: document.getElementById('postTitle').value,
+        cat: document.getElementById('postCategory').value,
+        tags: document.getElementById('postTags').value,
+        slug: document.getElementById('postSlug').value,
+        body: editor.getMarkdown(),
+        time: new Date().toLocaleTimeString()
+      };
+      localStorage.setItem('editor_draft', JSON.stringify(draft));
+      document.getElementById('saveStatus').innerText = `마지막 저장: ${draft.time}`;
+      if (!silent) showToast('임시 저장이 완료되었습니다.', 'success');
+    }
+
+    function loadDraft() {
+      const raw = localStorage.getItem('editor_draft');
+      if (raw) {
+        try {
+          const d = JSON.parse(raw);
+          if (confirm(`작성 중이던 임시 저장 글("${d.title || '제목 없음'}")을 불러오시겠습니까?`)) {
+            document.getElementById('postTitle').value = d.title || '';
+            document.getElementById('postCategory').value = d.cat || '';
+            document.getElementById('postTags').value = d.tags || '';
+            document.getElementById('postSlug').value = d.slug || '';
+            editor.setMarkdown(d.body || '');
+          }
+        } catch(e) {}
+      }
+    }
+
+    function openSettings() { document.getElementById('settingsModal').classList.add('active'); }
+    function closeSettings() { document.getElementById('settingsModal').classList.remove('active'); }
+
+    function saveSettings() {
+      const token = document.getElementById('ghToken').value.trim();
+      if (!token) return alert('GitHub Token을 입력해주세요.');
+      localStorage.setItem('gh_token', token);
+      localStorage.setItem('gh_owner', document.getElementById('ghOwner').value.trim());
+      localStorage.setItem('gh_repo', document.getElementById('ghRepo').value.trim());
+      localStorage.setItem('gh_branch', document.getElementById('ghBranch').value.trim());
+      localStorage.setItem('gh_path', document.getElementById('ghPath').value.trim());
+      closeSettings();
+      showToast('저장소 설정이 저장되었습니다.', 'success');
+    }
+
+    function loadSettings() {
+      document.getElementById('ghToken').value = localStorage.getItem('gh_token') || '';
+      document.getElementById('ghOwner').value = localStorage.getItem('gh_owner') || 'glitchsframe00';
+      document.getElementById('ghRepo').value = localStorage.getItem('gh_repo') || 'glitchsframe00.github.io';
+      document.getElementById('ghBranch').value = localStorage.getItem('gh_branch') || 'main';
+      document.getElementById('ghPath').value = localStorage.getItem('gh_path') || '_posts';
+      document.getElementById('repoBadge').innerText = `${document.getElementById('ghOwner').value}/${document.getElementById('ghRepo').value}`;
+    }
+
+    function buildMarkdown() {
+      const title = document.getElementById('postTitle').value.trim();
+      const date = document.getElementById('postDate').value;
+      const cat = document.getElementById('postCategory').value.trim();
+      const tags = document.getElementById('postTags').value.trim();
+      let fm = `---\nlayout: post\ntitle: "${title.replace(/"/g, '\\"')}"\ndate: ${date}\n`;
+      if (cat) fm += `categories: [${cat}]\n`;
+      if (tags) fm += `tags: [${tags.split(',').map(s=>s.trim()).filter(Boolean).join(', ')}]\n`;
+      fm += `---\n\n`;
+      return fm + editor.getMarkdown();
+    }
+
+    function previewMarkdown() {
+      document.getElementById('previewText').innerText = buildMarkdown();
+      document.getElementById('previewModal').classList.add('active');
+    }
+    function closePreview() { document.getElementById('previewModal').classList.remove('active'); }
+
+    async function publishPost() {
+      const title = document.getElementById('postTitle').value.trim();
+      if (!title) return alert('제목을 입력하세요.');
+      const body = editor.getMarkdown().trim();
+      if (!body) return alert('본문 내용을 입력하세요.');
+
+      const token = localStorage.getItem('gh_token');
+      if (!token) {
+        alert('GitHub Token을 먼저 등록해주세요.');
+        return openSettings();
+      }
+
+      const owner = localStorage.getItem('gh_owner') || 'glitchsframe00';
+      const repo = localStorage.getItem('gh_repo') || 'glitchsframe00.github.io';
+      const branch = localStorage.getItem('gh_branch') || 'main';
+      const dir = (localStorage.getItem('gh_path') || '_posts').replace(/^\\/|\\/$/g, '');
+
+      const now = new Date();
+      const p = n => String(n).padStart(2, '0');
+      const dateStr = `${now.getFullYear()}-${p(now.getMonth()+1)}-${p(now.getDate())}`;
+      let slug = (document.getElementById('postSlug').value.trim() || 'post').replace(/[^a-z0-9가-힣_-]/g, '-');
+      const filePath = `${dir}/${dateStr}-${slug}.md`;
+
+      const btn = document.getElementById('publishBtn');
+      btn.disabled = true;
+      btn.innerText = '발행 중...';
+
+      try {
+        const content = buildMarkdown();
+        const bytes = new TextEncoder().encode(content);
+        const base64 = btoa(Array.from(bytes, b => String.fromCharCode(b)).join(''));
+
+        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: `feat: publish post - ${title}`,
+            content: base64,
+            branch: branch
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          showToast('🎉 성공적으로 발행되었습니다!', 'success');
+          localStorage.removeItem('editor_draft');
+          if (confirm(`성공적으로 저장되었습니다!\\n\\n경로: ${filePath}\\n커밋 페이지를 확인하시겠습니까?`)) {
+            window.open(data.commit.html_url, '_blank');
+          }
+        } else {
+          alert(`발행 실패 (${res.status}): ${data.message || '오류 발생'}`);
+        }
+      } catch (err) {
+        alert(`네트워크 오류: ${err.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '🚀 발행하기 (저장)';
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
