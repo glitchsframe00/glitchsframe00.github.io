@@ -142,6 +142,19 @@
             border-color: var(--neon-red);
         }
 
+        /* 관리자 전용 기능은 기본 숨김 처리 (RBAC) */
+        .admin-only {
+            display: none !important;
+        }
+
+        body.admin-mode .admin-only {
+            display: inline-block !important;
+        }
+        
+        body.admin-mode div.admin-only {
+            display: flex !important;
+        }
+
         /* 필터 및 검색 영역 */
         .filter-bar {
             display: flex;
@@ -515,7 +528,7 @@
         }
     </style>
 </head>
-<body class="admin-mode">
+<body>
 
 <div class="container">
     <!-- 터미널 헤더 -->
@@ -530,10 +543,14 @@
             </div>
         </div>
         <div class="action-group">
-            <button type="button" class="btn btn-primary" id="btnOpenWrite">+ 새 프로젝트 글쓰기</button>
-            <button type="button" class="btn btn-active" id="btnToggleAdmin">관리 모드 ON</button>
-            <button type="button" class="btn" id="btnOpenGithub">GitHub 동기화 설정</button>
-            <button type="button" class="btn" id="btnDownloadHtml">HTML 다운로드</button>
+            <!-- 비로그인 사용자용 버튼 -->
+            <button type="button" class="btn btn-primary" id="btnOpenLogin">관리자 로그인</button>
+            
+            <!-- 로그인(인증)된 관리자 전용 버튼들 -->
+            <button type="button" class="btn btn-primary admin-only" id="btnOpenWrite">+ 새 프로젝트 글쓰기</button>
+            <button type="button" class="btn btn-active admin-only" id="btnToggleAdmin">관리 모드 OFF</button>
+            <button type="button" class="btn admin-only" id="btnOpenGithub">GitHub 동기화 설정</button>
+            <button type="button" class="btn admin-only" id="btnDownloadHtml">HTML 다운로드</button>
         </div>
     </div>
 
@@ -560,6 +577,26 @@
 
     <!-- 프로젝트 카드 그리드 -->
     <div class="grid" id="projectGrid"></div>
+</div>
+
+<!-- 관리자 로그인 모달 -->
+<div class="modal-backdrop" id="loginModal">
+    <div class="modal-box" style="max-width: 400px;">
+        <div class="modal-header">
+            <div class="modal-title">관리자 인증</div>
+            <button type="button" class="close-btn" id="btnCloseLogin">&times;</button>
+        </div>
+        <form id="loginForm">
+            <div class="form-group">
+                <label class="form-label" for="adminPasswordInput">관리자 비밀번호</label>
+                <input type="password" id="adminPasswordInput" class="form-input" placeholder="비밀번호를 입력하세요" required>
+            </div>
+            <div class="modal-footer" style="margin-top: 10px;">
+                <button type="button" class="btn" id="btnCancelLogin">취소</button>
+                <button type="submit" class="btn btn-primary">로그인</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <!-- 1. 티스토리 스타일 프로젝트 작성/수정 모달 -->
@@ -632,7 +669,7 @@
         <div class="tags" id="detailTags" style="margin-bottom: 12px;"></div>
         <div class="detail-body" id="detailContent"></div>
         <div class="modal-footer">
-            <button type="button" class="btn" id="btnEditFromDetail">이 프로젝트 수정</button>
+            <button type="button" class="btn admin-only" id="btnEditFromDetail">이 프로젝트 수정</button>
             <button type="button" class="btn btn-primary" id="btnCloseDetailFooter">닫기</button>
         </div>
     </div>
@@ -663,7 +700,7 @@
                 <input type="text" id="ghPath" class="form-input" value="Projects/Projects-Card.html">
             </div>
             <div class="form-group full">
-                <label class="form-label" for="ghToken">GitHub Personal Access Token (기존 editor.html 토큰과 자동 공유)</label>
+                <label class="form-label" for="ghToken">GitHub Personal Access Token</label>
                 <input type="password" id="ghToken" class="form-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
             </div>
         </div>
@@ -676,7 +713,7 @@
 
 <div class="toast" id="toastBox"></div>
 
-<!-- 초기 프로젝트 데이터 (GitHub 반영 시 이 영역이 자동으로 최신화됩니다) -->
+<!-- 초기 프로젝트 데이터 -->
 <script id="initialProjectsData" type="application/json">
 [
     {"id":"proj-1","date":"2025. 03. 04 - 2025. 04. 28","name":"데상트 웹 취약점 진단","role":"웹 모의해킹","client":"데상트 코리아","ongoing":false,"summary":""},
@@ -699,6 +736,12 @@
 <script>
 (function() {
     const STORAGE_KEY = 'glitchs_projects_data_v1';
+    const ADMIN_SESSION_KEY = 'glitchs_is_admin';
+
+    // [보안 강화] 비밀번호 변경 기능 원천 차단: 코드 내 상수로만 고정 관리됨
+    // 비밀번호를 변경하려면 반드시 이 코드의 문자열을 수정하고 GitHub에 커밋해야 합니다.
+    const ADMIN_PASSWORD = 'admin1234!'; 
+
     let projects = [];
     let currentFilter = 'all';
     let searchQuery = '';
@@ -723,6 +766,17 @@
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
+    }
+
+    function checkAdminSession() {
+        const isAdmin = safeGet(ADMIN_SESSION_KEY, 'false') === 'true';
+        if (isAdmin) {
+            document.body.classList.add('admin-mode');
+            document.getElementById('btnOpenLogin').style.display = 'none';
+        } else {
+            document.body.classList.remove('admin-mode');
+            document.getElementById('btnOpenLogin').style.display = 'inline-block';
+        }
     }
 
     function loadData() {
@@ -870,7 +924,7 @@
 
         if (!token) {
             document.getElementById('githubModal').classList.add('open');
-            showToast('GitHub 토큰(gh_token)을 입력해 주세요.');
+            showToast('GitHub 토큰을 입력해 주세요.');
             return;
         }
 
@@ -914,6 +968,39 @@
         }
     }
 
+    // 관리자 로그인 모달 이벤트
+    document.getElementById('btnOpenLogin').addEventListener('click', function() {
+        document.getElementById('adminPasswordInput').value = '';
+        document.getElementById('loginModal').classList.add('open');
+    });
+    document.getElementById('btnCloseLogin').addEventListener('click', function() {
+        document.getElementById('loginModal').classList.remove('open');
+    });
+    document.getElementById('btnCancelLogin').addEventListener('click', function() {
+        document.getElementById('loginModal').classList.remove('open');
+    });
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const inputPw = document.getElementById('adminPasswordInput').value;
+
+        // [보안] 코드 내 고정된 상숫값과 직접 비교 (localStorage 변조 불가)
+        if (inputPw === ADMIN_PASSWORD) {
+            safeSet(ADMIN_SESSION_KEY, 'true');
+            checkAdminSession();
+            document.getElementById('loginModal').classList.remove('open');
+            showToast('관리자 인증 성공');
+        } else {
+            showToast('비밀번호가 일치하지 않습니다.');
+        }
+    });
+
+    // 관리 모드 끄기 버튼
+    document.getElementById('btnToggleAdmin').addEventListener('click', function() {
+        safeSet(ADMIN_SESSION_KEY, 'false');
+        checkAdminSession();
+        showToast('관리자 모드가 종료되었습니다.');
+    });
+
     document.getElementById('btnOpenWrite').addEventListener('click', function() { openEditor(null); });
     document.getElementById('btnCloseEditor').addEventListener('click', function() { document.getElementById('editorModal').classList.remove('open'); });
     document.getElementById('btnCancelEditor').addEventListener('click', function() { document.getElementById('editorModal').classList.remove('open'); });
@@ -923,12 +1010,6 @@
     document.getElementById('rolePresetChips').addEventListener('click', function(e) {
         const b = e.target.closest('[data-role]');
         if (b) document.getElementById('inputRoleTag').value = b.getAttribute('data-role');
-    });
-
-    document.getElementById('btnToggleAdmin').addEventListener('click', function() {
-        const on = document.body.classList.toggle('admin-mode');
-        this.textContent = on ? '관리 모드 ON' : '관리 모드 OFF';
-        this.classList.toggle('btn-active', on);
     });
 
     document.getElementById('btnOpenGithub').addEventListener('click', function() {
@@ -1011,7 +1092,7 @@
                 '<span class="tag role">' + esc(proj.role) + '</span>' +
                 (proj.client ? ' <span class="tag client">' + esc(proj.client) + '</span>' : '');
             document.getElementById('detailContent').textContent =
-                proj.summary || '등록된 상세 수행 노트가 없습니다. [이 프로젝트 수정] 버튼을 눌러 티스토리 본문처럼 상세 내용을 작성해 보세요.';
+                proj.summary || '등록된 상세 수행 노트가 없습니다.';
             document.getElementById('detailModal').classList.add('open');
         }
     });
@@ -1025,6 +1106,7 @@
     });
 
     loadData();
+    checkAdminSession();
     render();
 })();
 </script>
