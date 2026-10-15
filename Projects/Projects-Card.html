@@ -738,9 +738,8 @@
     const STORAGE_KEY = 'glitchs_projects_data_v1';
     const ADMIN_SESSION_KEY = 'glitchs_is_admin';
 
-    // [보안 강화] 비밀번호 변경 기능 원천 차단: 코드 내 상수로만 고정 관리됨
-    // 비밀번호를 변경하려면 반드시 이 코드의 문자열을 수정하고 GitHub에 커밋해야 합니다.
-    const ADMIN_PASSWORD = 'admin1234!'; 
+    // [보안 강화] 관리자 비밀번호 적용 ('qhdks!23')
+    const ADMIN_PASSWORD = 'qhdks!23';  
 
     let projects = [];
     let currentFilter = 'all';
@@ -983,7 +982,7 @@
         e.preventDefault();
         const inputPw = document.getElementById('adminPasswordInput').value;
 
-        // [보안] 코드 내 고정된 상숫값과 직접 비교 (localStorage 변조 불가)
+        // [보안] 코드 내 고정된 상숫값과 직접 비교
         if (inputPw === ADMIN_PASSWORD) {
             safeSet(ADMIN_SESSION_KEY, 'true');
             checkAdminSession();
